@@ -448,32 +448,27 @@ class FontEngine {
             this.l.chData1[last] = 'none';
             this.l.chData2[last] = '';
             this.l.chData3[last] = '';
-            this.l.chData4[last] = '';
         } else {
             this.l.chData0.push('__');
             this.l.chData1.push('none');
             this.l.chData2.push('');
             this.l.chData3.push('');
-            this.l.chData4.push('');
         }
         let index = this.l.chIndex.length;
-        this.l.chIndex.push(this.l.chData0.length);
+        this.l.chIndex.push(this.l.chData0.length + 1);
         this.l.chWidth.push(0);
-        this.l.chKern.push('');
 
-        for (let i = 0; i < 110; i++) {
+        for (let i = 0; i < 30; i++) {
             this.l.chData0.push('');
             this.l.chData1.push('');
             this.l.chData2.push('');
             this.l.chData3.push('');
-            this.l.chData4.push('');
         }
 
         this.l.chData0.push('__');
         this.l.chData1.push('none');
         this.l.chData2.push('');
         this.l.chData3.push('');
-        this.l.chData4.push('');
 
         return index;
     }
