@@ -605,7 +605,7 @@ function openFont(event) {
 
     let fontData = event.target.value;
     charset = '';
-    font = [];
+    font = {};
 
     let i = 0;
     i = search(fontData, '{', i);
@@ -630,7 +630,7 @@ function openFont(event) {
 
         let char = [];
 
-        char.push(fontData.charAt(i + 1));
+        font[fontData.charAt(i + 1)] = char;
 
         let left = i + 2;
         let right = search(fontData, ',', left + 1);
@@ -639,7 +639,6 @@ function openFont(event) {
 
         if ((idx !== - 1) && (idx < right)) {
             char.push(round(+fontData.slice(left + 1, idx) / 100));
-            font.push(char);
             i = right + 1;
             continue;
         }
@@ -700,8 +699,6 @@ function openFont(event) {
             char.push(path);
 
         }
-
-        font.push(char);
 
     }
     
