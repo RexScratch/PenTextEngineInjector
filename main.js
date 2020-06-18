@@ -181,9 +181,9 @@ class Curve {
         let str = '';
 
         str += formatNum(2 * this.ax) + ';';
-        str += formatNum(this.bx) + ';';
+        str += formatNum(this.bx / 2) + ';';
         str += formatNum(2 * this.ay) + ';';
-        str += formatNum(this.by) + ';';
+        str += formatNum(this.by / 2) + ';';
 
         return str;
 
