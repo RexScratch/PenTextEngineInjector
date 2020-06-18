@@ -453,6 +453,18 @@ class TextEngine {
 
     }
 
+    static containsCurves(charData) {
+
+        for (let i = 1; i < charData.length; i++) {
+            if (charData[i].includes('Q')) {
+                return true;
+            }
+        }
+        
+        return false;
+
+    }
+
     addNewChar() {
 
         let last = this.l.chData0.length - 1
@@ -601,7 +613,7 @@ class TextEngine {
 
 }
 
-function openFont(event) {
+function parseFont(event) {
 
     let fontData = event.target.value;
     charset = '';
@@ -639,7 +651,7 @@ function openFont(event) {
 
         if ((idx !== - 1) && (idx < right)) {
             char.push(round(+fontData.slice(left + 1, idx) / 100));
-            i = right + 1;
+            i = idx + 1;
             continue;
         }
 
