@@ -8,189 +8,9 @@ function alertError(message) {
     throw Error;
 }
 
-function formatNumFixedLength(n) {
-
-    n = +n;
-
-    var len = 4; // May get garbage digits at the end if the length is too high
-    var s = '';
-
-    if (len < 1) {
-        return s;
-    }
-
-    if (Number.isNaN(n)) {
-        for (let i = 0; i < len; i++) {
-            s += 'NaN'.charAt(i % 3);
-        }
-        return s;
-    }
-
-    if (n === 0) {
-
-        s += '0';
-        if (len > 1) {
-            s += '.';
-        }
-
-        for (let i = 2; i < len; i++) {
-            s += '0';
-        }
-        return s;
-    }
-
-    if (n < 0) {
-        if (len < 2) {
-            s += '0';
-            return s;
-        }
-        n *= -1;
-        s += '-';
-        len--;
-    }
-
-    if (n === Infinity) {
-        n = Number.MAX_VALUE;
-    }
-
-    var exponent = Math.floor(Math.log10(n));
-    if (n >= (+('1e' + (exponent + 1)))) { // Remove effects of floating-point error
-        exponent += 1;
-    } else if (n < (+'1e' + exponent)) {
-        exponent -= 1;
-    }
-
-    var mantissa = n / (+('1e' + exponent)); // 10 ** exponent may introduce error, so this is used instead (base 10 with floats is weird anyway)
-
-    if (exponent < 0) {
-
-        if (len < 2) {
-            s += '0';
-            return s;
-        }
-
-        const fixedPrecision = len + exponent;
-        const expString = (''+(-1*exponent));
-
-        if ((fixedPrecision < len - expString.length - 3)) {
-
-            if (len < expString.length + 3) {
-                s += '0';
-                len--;
-                if (len > 0) {
-                    s += '.';
-                    len--;
-                }
-
-                for (let i = 0; i < len; i++) {
-                    s += '0';
-                }
-
-                return s;
-            }
-
-            len -= (expString.length + 2);
-
-            for (let i = 0; i < len; i++) {
-                if (len - i === 1) {
-                    s += ('' + Math.round(mantissa % 10)).charAt(0);
-                } else {
-                    s += ('' + Math.floor(mantissa % 10)).charAt(0);
-                }
-                if (i === 0 && len > 1) {
-                    s += '.';
-                    i++;
-                }
-
-                mantissa *= 10;
-            }
-
-            s += 'e-' + expString;
-            return s;
-
-        }
-
-        s += '.';
-        len--;
-
-        for (let i = 0; i < len; i++) {
-            n *= 10;
-            if (len - i === 1) {
-                s += ('' + Math.round(n % 10)).charAt(0);
-            } else {
-                s += ('' + Math.floor(n % 10)).charAt(0);
-            }
-        }
-
-        return s;
-
-    }
-    
-    if (exponent + 1 > len) {
-
-        const expString = (''+exponent);
-
-        if (expString.length + 2 > len) {
-            s += '9';
-            if (len < 2) {
-                return s;
-            }
-            if (len < 3) {
-                s += '9';
-                return s;
-            }
-            s += 'e';
-            for (let i = 2; i < len; i++) {
-                s += '9';
-            }
-            return s;
-        }
-
-        len -= (expString.length + 1);
-
-        for (let i = 0; i < len; i++) {
-            if (len - i === 1) {
-                s += ('' + Math.round(mantissa % 10)).charAt(0);
-            } else {
-                s += ('' + Math.floor(mantissa % 10)).charAt(0);
-            }
-            if (i === 0 && len > 1) {
-                s += '.';
-                i++;
-            }
-
-            mantissa *= 10;
-        }
-
-        s += 'e' + expString;
-        return s;
-
-    }
-
-
-    for (let i = 0; i < len; i++) {
-        if (len - i === 1) {
-            s += ('' + Math.round(mantissa % 10)).charAt(0);
-        } else {
-            s += ('' + Math.floor(mantissa % 10)).charAt(0);
-        }
-
-        if ((exponent === 0) && (len - i) > 1) {
-            s += '.';
-            i++;
-        }
-
-        mantissa *= 10;
-        exponent -= 1;
-    }
-
-    return s;
-
-}
-
 function formatNum(n) {
 
-    const PRECISION = 10;
+    const PRECISION = 8;
 
     n = +n;
     if (Number.isNaN(n)) {
@@ -729,61 +549,6 @@ class FontEngine {
 
     }
 
-    addKerning(font, fontSize) {
-
-        let charset = '';
-        for (let i = 2; i < this.currentFont.length; i += 8) {
-            charset += this.costumes[this.currentFont[i]].name.charAt(0);
-        }
-
-        let chars = {};
-        for (let char of charset) {
-            if (font.charToGlyph(char).unicode != null) {
-                chars[char] = this.costumeIndex[char + '_'] - 1;
-            }
-        }
-
-        let kerningPairs = [];
-
-        for (let i = 0; i < charset.length; i++) {
-            let char = charset.charAt(i);
-            let glyph = font.charToGlyph(char);
-
-            let kerning = [];
-            if (char !== ' ') {
-                for (let char2 in chars) {
-                    if (chars.hasOwnProperty(char2)) {
-
-                        let kerningValue = +font.getKerningValue(font.charToGlyph(char2), glyph);
-                        if (char2 === ' ') {
-                            kerningValue = 0.0;
-                        }
-                        kerningValue = 1000 * round(kerningValue / font.unitsPerEm * fontSize);
-                        if (!Number.isNaN(kerningValue) && kerningValue !== 0) {
-                            kerning[chars[char2]] = kerningValue;
-                            kerningPairs.push([''+char2+char, kerningValue / 1000]);
-                        }
-
-                    } 
-                }
-            }
-
-            let kerningText = '';
-            for (let kerningValue of kerning) {
-                if (kerningValue == null) {
-                    kerningValue = 0;
-                }
-                kerningText += formatNumFixedLength(kerningValue);
-            }
-
-            this.currentFont[8 * i + 4] = kerningText;
-        }
-
-        kerningPairs.sort((a, b) => (Math.abs(b[1]) - Math.abs(a[1])));
-        this.kerningPairs = kerningPairs; // So I can find kerning pairs to demonstrate
-
-    }
-
     updateFontLists(font, fontName) {
 
         this.currentFont[1] = Math.round((this.currentFont.length - 2) / 8);
@@ -996,19 +761,12 @@ function inject(sb3) {
 
         } else {
 
-            let useKerning = document.getElementById('useKerning').checked;
-
             if (sprite.l.chIndex.length === 0) {
                 sprite.addNewChar();
             }
             
             for (let i = 0; i < charset.length; i++) {
                 sprite.addChar(charset.charAt(i), font, fontSize);
-            }
-
-            if (useKerning) {
-                sprite.addKerning(font, fontSize);
-            } else {
             }
 
             sprite.updateFontLists(font, fontName);
