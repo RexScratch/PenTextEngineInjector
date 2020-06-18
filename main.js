@@ -1,9 +1,23 @@
 fileName = "project.sb3";
 charset = '';
+font = 'error';
 
 function alertError(message) {
     alert('Error: ' + message);
     throw Error;
+}
+
+function search(str, substr, i=0) {
+    let out = str.indexOf(substr, i);
+    if (out === -1) {
+        invalidFont();
+    }
+    return out;
+}
+
+function invalidFont() {
+    font = 'error';
+    alertError('Font data is not in the correct format');
 }
 
 function formatNum(n) {
@@ -456,7 +470,7 @@ class FontEngine {
         this.l.chIndex.push(this.l.chData0.length + 1);
         this.l.chWidth.push(0);
 
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 25; i++) {
             this.l.chData0.push('');
             this.l.chData1.push('');
             this.l.chData2.push('');
@@ -528,7 +542,7 @@ class FontEngine {
 
     }
 
-    updateFontLists(ontName) {
+    updateFontLists(fontName) {
 
         this.currentFont[1] = Math.round((this.currentFont.length - 2) / 8);
 
@@ -589,7 +603,107 @@ class FontEngine {
 
 function openFont(event) {
 
+    let fontData = event.target.value;
     charset = '';
+    font = [];
+
+    let i = 0;
+    i = search(fontData, '{', i);
+    i = search(fontData, '[', i + 1);
+
+    let left = i;
+    let right = search(fontData, ']', left + 1);
+    document.getElementById('fontName').value = fontData.slice(left + 1, right);   
+
+    i = right + 1;
+
+    while (true) {
+
+        let end = fontData.indexOf('}', i);
+        let next = fontData.indexOf('[', i);
+
+        if ((end < next) || next === -1) {
+            return;
+        }
+
+        i = next;
+
+        let char = [];
+
+        char.push(fontData.charAt(i + 1));
+
+        let left = i + 2;
+        let right = search(fontData, ',', left + 1);
+
+        let idx = fontData.indexOf(']', left + 1);
+
+        if ((idx !== - 1) && (idx < right)) {
+            char.push(round(+fontData.slice(left + 1, idx) / 100));
+            font.push(char);
+            i = right + 1;
+            continue;
+        }
+
+        char.push(round(+fontData.slice(left + 1, right) / 100));
+
+        i = right;
+
+        while (true) {
+
+            let end = fontData.indexOf(']', i);
+            let next = fontData.indexOf('(', i);
+
+            if ((end < next) || (next === -1)) {
+                break;
+            }
+
+            i = next + 1;
+
+            path = [];
+
+            while (true) {
+
+                if (fontData.charAt(i) === 'b') {
+                    path.push('Q');
+                    i += 2;
+                    continue;
+                }
+
+                let left = i;
+
+                let right = Infinity;
+
+                let idx = fontData.indexOf(',', i);
+                if ((idx !== -1) && (idx < right)) {
+                    right = idx;
+                }
+                idx = fontData.indexOf(';', i);
+                if ((idx !== -1) && (idx < right)) {
+                    right = idx;
+                }
+                idx = fontData.indexOf(')', i);
+                if ((idx !== -1) && (idx < right)) {
+                    i = idx + 1;
+                    break;
+                }
+
+                if (idx === Infinity) {
+                    invalidFont();
+                }
+
+                path.push(round(+fontData.slice(left, right) / 100));
+
+                i = right + 1;
+
+            }
+
+            char.push(path);
+
+        }
+
+        font.push(char);
+
+    }
     
 }
 
@@ -609,6 +723,11 @@ function clearArray(arr) { // Removes every item from an array
 }
 
 function inject(sb3) {
+
+    if (font === 'error') {
+        invalidFont();
+    }
+
     spriteName = document.getElementById("spriteName").value;
     sb3.file("project.json").async("string").then(injectData);
 
