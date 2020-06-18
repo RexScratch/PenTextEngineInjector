@@ -313,17 +313,22 @@ class TextEngine {
         }
 
         this.currentFont.push(index + 1);
-        this.currentFont.push(charData[0]);
+        this.currentFont.push(charData[0] + 0.27);
 
         let definition = '';
         const containsCurves = TextEngine.containsCurves(charData);
-        definition += ''+(charData.length - 1) + ';';
+        definition += '';
         if (containsCurves) {
             definition += 'Q;';
         } else {
             definition += ';';
         }
         definition += ';;';
+
+        let dotsDef = '';
+        let dots = 0;
+
+        let numPaths = 0;
 
         for (let i = 1; i < charData.length; i++) {
 
@@ -332,7 +337,15 @@ class TextEngine {
             let path = charData[i];
             let x = path[0];
             let y = path[1];
-            let firstCoord = formatNum(x) + ';' + formatNum(y) + ';';
+            let firstCoord = formatNum(x + 0.135) + ';' + formatNum(y) + ';';
+
+            if (path.length === 2) {
+                dots++;
+                dotsDef += firstCoord + ';;';
+                continue;
+            }
+
+            numPaths++;
 
             for (let j = 2; j < path.length; len++) {
 
@@ -344,7 +357,7 @@ class TextEngine {
                     let newX = path[j + 3];
                     let newY = path[j + 4];
 
-                    pathDef += new Curve(x, y, controlX, controlY, newX, newY).toString(containsCurves);
+                    pathDef += new Curve(x + 0.135, y, controlX + 0.135, controlY, newX + 0.135, newY).toString(containsCurves);
 
                     x = newX;
                     y = newY;
@@ -356,7 +369,7 @@ class TextEngine {
                     let newX = path[j];
                     let newY = path[j + 1];
 
-                    pathDef += new Line(x, y, newX, newY).toString(containsCurves);
+                    pathDef += new Line(x + 0.135, y, newX + 0.135, newY).toString(containsCurves);
 
                     x = newX;
                     y = newY;
@@ -371,6 +384,8 @@ class TextEngine {
             definition += pathDef;
 
         }
+        
+        definition = numPaths + ';' + definition + dots + ';;;;' + dotsDef;
 
         this.currentFont.push(definition);
 
