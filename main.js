@@ -96,12 +96,8 @@ class Line {
 
         this.x0 = x0;
         this.x1 = x1;
-        this.xmin = x0;
-        this.xmax = x1;
         this.y0 = y0;
         this.y1 = y1;
-        this.ymin = Math.min(y0, y1);
-        this.ymax = Math.max(y0, y1);
 
         this.isLine = true;
         this.isCurve = false;
@@ -112,8 +108,8 @@ class Line {
         if (containsCurves) {
 
             let str = 'L;';
-            str += formatNum(this.y1) + ';';
-            str += formatNum(this.y2) + ';';
+            str += formatNum(this.x1 - this.x0) + ';';
+            str += formatNum(this.y1 - this.y0) + ';';
             str += ';';
 
             return str;
@@ -121,8 +117,8 @@ class Line {
         }
 
         let str = '';
-        str += formatNum(this.y1) + ';';
-        str += formatNum(this.y2) + ';';
+        str += formatNum(this.x1 - this.x0) + ';';
+        str += formatNum(this.y1 - this.y0) + ';';
         str += ';;';
 
         return str;
@@ -143,6 +139,14 @@ class Curve {
         y1 = round(y1);
         x2 = round(x2);
         y2 = round(y2);
+
+        x1 -= x0;
+        x2 -= x0;
+        x0 = 0.0;
+
+        y1 -= y0;
+        y2 -= y0;
+        y0 = 0.0;
 
         this.x0 = x0;
         this.y0 = y0;
@@ -168,12 +172,6 @@ class Curve {
         this.by = round(this.by);
         this.cy = round(this.cy);
 
-        this.xmin = x0;
-        this.xmax = x2;
-
-        this.ymin = Math.min(y0, y2, extremeY);
-        this.ymax = Math.max(y0, y2, extremeY);
-
         this.isLine = false;
         this.isCurve = true;
     }
@@ -182,9 +180,9 @@ class Curve {
 
         let str = '';
 
-        str += formatNum(this.ax) + ';';
+        str += formatNum(2 * this.ax) + ';';
         str += formatNum(this.bx) + ';';
-        str += formatNum(this.ay) + ';';
+        str += formatNum(2 * this.ay) + ';';
         str += formatNum(this.by) + ';';
 
         return str;
@@ -304,7 +302,7 @@ class TextEngine {
         return index;
     }
 
-    addChar(char) {
+    addChar(char, charData) {
 
         let index = NaN;
 
@@ -315,46 +313,63 @@ class TextEngine {
         }
 
         this.currentFont.push(index + 1);
-        this.currentFont.push(round(font.getAdvanceWidth(char, fontSize)));
-
-        const commands = path.commands;
-        let segments = [];
-        let beginX = 0;
-        let beginY = 0;
-        let x = beginX;
-        let y = beginY;
-
-        for (let command of commands) {
-            if (command.type === 'M') {
-                beginX = command.x;
-                beginY = command.y;
-                x = beginX;
-                y = beginY;
-            } else if (command.type === 'L') {
-                segments = segments.concat(Line.createLines(x, y, command.x, command.y));
-                x = command.x;
-                y = command.y;
-            } else if (command.type === 'Q') {
-                segments = segments.concat(Curve.createCurves(x, y, command.x1, command.y1, command.x, command.y));
-                x = command.x;
-                y = command.y;  
-            } else if (command.type === 'C') {
-                segments = segments.concat(Curve.createCurves(x, y, command.x1, command.y1, command.x2, command.y2, command.x, command.y));
-                x = command.x;
-                y = command.y;
-            } else if (command.type === 'Z') {
-                segments = segments.concat(Line.createLines(x, y, beginX, beginY));
-                x = beginX;
-                y = beginY;
-            } else {
-                alertError('Font is not compatible');
-            }
-        }
+        this.currentFont.push(charData[0]);
 
         let definition = '';
-        definition += formatNum(segments.length) + ';;;;;';
-        for (let segment of segments) {
-            definition += segment.toString();
+        const containsCurves = TextEngine.containsCurves(charData);
+        definition += ''+(charData.length - 1) + ';';
+        if (containsCurves) {
+            definition += 'Q;';
+        } else {
+            definition += ';';
+        }
+        definition += ';;';
+
+        for (let i = 1; i < charData.length; i++) {
+
+            let len = 0;
+            let pathDef = '';
+            let path = charData[i];
+            let x = path[0];
+            let y = path[1];
+            let firstCoord = formatNum(x) + ';' + formatNum(y) + ';';
+
+            for (let j = 2; j < path.length; len++) {
+
+                if (path[j] === 'Q') {
+
+                    let controlX = path[j + 1];
+                    let controlY = path[j + 2];
+
+                    let newX = path[j + 3];
+                    let newY = path[j + 4];
+
+                    pathDef += new Curve(x, y, controlX, controlY, newX, newY).toString(containsCurves);
+
+                    x = newX;
+                    y = newY;
+
+                    j += 5;
+
+                } else {
+
+                    let newX = path[j];
+                    let newY = path[j + 1];
+
+                    pathDef += new Line(x, y, newX, newY).toString(containsCurves);
+
+                    x = newX;
+                    y = newY;
+
+                    j += 2;
+
+                }
+
+            }
+
+            pathDef = firstCoord + len + ';;' + pathDef;
+            definition += pathDef;
+
         }
 
         this.currentFont.push(definition);
@@ -363,40 +378,19 @@ class TextEngine {
 
     updateFontLists(fontName) {
 
-        this.currentFont[1] = Math.round((this.currentFont.length - 2) / 8);
+        this.currentFont[1] = Math.round((this.currentFont.length - 2) / 3);
 
         let index = sprite.l.fontName.map((value) => value.toLowerCase()).indexOf(fontName.toLowerCase());
-        
-        let names = font.names;
-        let language = null;
-        if (names.copyright.hasOwnProperty('en')) {
-            language = 'en';
-        } else {
-            for (lang in names.copyright) {
-                if (names.copyright.hasOwnProperty(lang)) {
-                    language = lang;
-                    break;
-                }
-            }
-        }
-
-        let license = '';
-        if (language != null) {
-            license = `${names.copyright[language]} ${names.license[language]}`;
-        }
 
         if (index === -1) {
 
             this.l.fontName.push(fontName.toLowerCase());
-            this.l.fontLicense.push(license);
             this.l.fontIndex.push(this.l.fontData.length + 1);
             for (let item of this.currentFont) {
                 this.l.fontData.push(item);
             }
 
         } else {
-
-            this.l.fontLicense[index] = license;
 
             let fontDataIndex = this.l.fontIndex[index];
             let currentLen = 0;
@@ -450,6 +444,7 @@ function parseFont(event) {
         let char = [];
 
         font[fontData.charAt(i + 1)] = char;
+        charset += fontData.charAt(i + 1);
 
         let left = i + 2;
         let right = search(fontData, ',', left + 1);
@@ -487,6 +482,8 @@ function parseFont(event) {
                     continue;
                 }
 
+                exitLoop = false;
+
                 let left = i;
 
                 let right = Infinity;
@@ -501,8 +498,8 @@ function parseFont(event) {
                 }
                 idx = fontData.indexOf(')', i);
                 if ((idx !== -1) && (idx < right)) {
-                    i = idx + 1;
-                    break;
+                    right = idx;
+                    exitLoop = true;
                 }
 
                 if (idx === Infinity) {
@@ -512,6 +509,10 @@ function parseFont(event) {
                 path.push(round(+fontData.slice(left, right) / 100));
 
                 i = right + 1;
+
+                if (exitLoop) {
+                    break;
+                }
 
             }
 
@@ -539,10 +540,6 @@ function clearArray(arr) { // Removes every item from an array
 }
 
 function inject(sb3) {
-
-    if (font === 'error') {
-        invalidFont();
-    }
 
     spriteName = document.getElementById("spriteName").value;
     sb3.file("project.json").async("string").then(injectData);
@@ -638,12 +635,17 @@ function inject(sb3) {
 
         } else {
 
+            if (font === 'error') {
+                invalidFont();
+            }
+
             if (sprite.l.chIndex.length === 0) {
                 sprite.addNewChar();
             }
             
             for (let i = 0; i < charset.length; i++) {
-                sprite.addChar(charset.charAt(i));
+                let c = charset.charAt(i);
+                sprite.addChar(c, font[c]);
             }
 
             sprite.updateFontLists(fontName);
