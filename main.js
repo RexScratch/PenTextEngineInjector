@@ -386,7 +386,7 @@ class Curve {
 
 }
 
-class FontEngine {
+class TextEngine {
     
     constructor(project, spriteName) {
 
@@ -735,7 +735,7 @@ function inject(sb3) {
         progressElem.innerText = 'Parsing file...';
         project = JSON.parse(project);
         progressElem.innerText = 'Working...';
-        sprite = new FontEngine(project, spriteName);
+        sprite = new TextEngine(project, spriteName);
 
         let listNames = [
             'chIndex',
