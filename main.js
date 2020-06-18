@@ -657,19 +657,13 @@ function inject(sb3) {
         let listNames = [
             'chIndex',
             'chWidth',
-            'chKern',
             'chData0',
             'chData1',
             'chData2',
             'chData3',
-            'chData4',
             'fontName',
-            'fontLicense',
             'fontIndex',
-            'fontData',
-            'cacheIdx',
-            'cache0',
-            'cache1',
+            'fontData'
         ];
 
         for (let listName of listNames) {
@@ -699,19 +693,13 @@ function inject(sb3) {
                 let listsToClear = [
                     sprite.l.chIndex,
                     sprite.l.chWidth,
-                    sprite.l.chKern,
                     sprite.l.chData0,
                     sprite.l.chData1,
                     sprite.l.chData2,
                     sprite.l.chData3,
-                    sprite.l.chData4,
                     sprite.l.fontName,
-                    sprite.l.fontLicense,
                     sprite.l.fontIndex,
                     sprite.l.fontData,
-                    sprite.l.cacheIdx,
-                    sprite.l.cache0,
-                    sprite.l.cache1
                 ];
 
                 for (list of listsToClear) {
@@ -728,21 +716,13 @@ function inject(sb3) {
                 listNames = [
                     '_chIndex',
                     '_chWidth',
-                    '_chKern',
                     '_chData0',
                     '_chData1',
                     '_chData2',
                     '_chData3',
-                    '_chData4',
                     // '_fontName',
-                    // '_fontLicense',
                     '_fontIndex',
                     '_fontData',
-                    '_cacheIdx',
-                    '_cache0',
-                    '_cache1',
-                    '_raster',
-                    '_rasterDir',
                     '_ww0',
                     '_ww1',
                     '_ww2'
