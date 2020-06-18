@@ -41,7 +41,7 @@ a:visited, a:active {
     color: rgb(0,63,159);
 }
 
-#charset {
+#fontData {
     width: 90%;
     font-family: Inconsolata, Consolas, monospace;
     font-size: 1rem;

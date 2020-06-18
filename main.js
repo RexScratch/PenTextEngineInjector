@@ -1,7 +1,5 @@
-font = {};
 fileName = "project.sb3";
-fontSize = 1;
-progressSteps = 2;
+charset = '';
 
 function alertError(message) {
     alert('Error: ' + message);
@@ -473,12 +471,7 @@ class FontEngine {
         return index;
     }
 
-    addChar(char, font, fontSize) {
-        
-        let glyph = font.charToGlyph(char);
-        if (glyph.unicode == null) {
-            return;
-        }
+    addChar(char) {
 
         let index = NaN;
 
@@ -490,15 +483,6 @@ class FontEngine {
 
         this.currentFont.push(index + 1);
         this.currentFont.push(round(font.getAdvanceWidth(char, fontSize)));
-        this.currentFont.push(''); // kerning
-
-        let path = glyph.getPath(0, 0, fontSize);
-        let bounds = path.getBoundingBox();
-
-        this.currentFont.push(round(bounds.x1));
-        this.currentFont.push(round(bounds.x2));
-        this.currentFont.push(round(-1 * bounds.y2));
-        this.currentFont.push(round(-1 * bounds.y1));
 
         const commands = path.commands;
         let segments = [];
@@ -544,7 +528,7 @@ class FontEngine {
 
     }
 
-    updateFontLists(font, fontName) {
+    updateFontLists(ontName) {
 
         this.currentFont[1] = Math.round((this.currentFont.length - 2) / 8);
 
@@ -604,21 +588,9 @@ class FontEngine {
 }
 
 function openFont(event) {
-    let reader = new FileReader();
-    reader.onload = function() {
-        font = opentype.parse(reader.result);
-        const bounds = font.getPath('H', 0, 0, 1).getBoundingBox();
-        fontSize = 1 / (bounds.y2 - bounds.y1);
 
-        let name = font.names.fullName.en;
-        if (name !== void 0) {
-            name = name.replace(" Regular", "").replace(" Normal", "").replace(" Book", "");
-            name = name.replace(" regular", "").replace(" normal", "").replace(" book", "");
-            document.getElementById("fontName").value = name;
-        }
-    }
-
-    reader.readAsArrayBuffer(event.target.files[0]);
+    charset = '';
+    
 }
 
 function openSb3() {
@@ -668,11 +640,6 @@ function inject(sb3) {
         fontName = document.getElementById("fontName").value;
         sprite.currentFont.push(`${fontName}_${(new Date()).getTime()}`);
         sprite.currentFont.push(0);
-
-        let charset = document.getElementById("charset").value;
-        if (charset.indexOf(" ") === -1) {
-            charset = " " + charset;
-        }
 
         const clearData = document.getElementById("clearData").checked;
         const clearMonitors = document.getElementById("clearMonitors").checked;
@@ -741,10 +708,10 @@ function inject(sb3) {
             }
             
             for (let i = 0; i < charset.length; i++) {
-                sprite.addChar(charset.charAt(i), font, fontSize);
+                sprite.addChar(charset.charAt(i));
             }
 
-            sprite.updateFontLists(font, fontName);
+            sprite.updateFontLists(fontName);
         }
 
         progressElem.innerText = 'Creating file...';

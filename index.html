@@ -21,19 +21,14 @@
             <h2>1. Font Settings</h2>
 
             <div class="option">
-                <h6>Font File</h6>
-                <input type="file" accept=".ttf,.otf" onchange="openFont(event)">
+                <h6>Font Data</h6>
+                <input id="fontData" type="text" onchange="openFont(event)">
+                <p>Font data must be in the PTE Ultra+ format. Find fonts <a href="https://scratch.mit.edu/discuss/topic/322261/">here</a>.</p>
             </div>
             
             <div class="option">
                 <h6>Name of Font to be used in Project</h6>
                 <input type="text" id="fontName">
-            </div>
-            
-            <div class="option">
-                <h6>Character Set to Inject</h6>
-                <input type="text" id="charset" value=" abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$¢€£¥%^&amp;*()-–—=≠≈[]\;&apos;‘’,./_+{}|:&quot;“”&lt;≤≥&gt;?`~×÷±°′″">
-                <p>If the font already exists, its character data will be wiped before injecting the above character set</p>
             </div>
 
             <div class="option" style="padding-bottom:0">
