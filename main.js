@@ -94,13 +94,6 @@ class Line {
         x1 = round(x1);
         y1 = round(y1);
 
-        this.direction = 1;
-        if (x1 < x0) {
-            this.direction *= -1;
-            [x0, x1] = [x1, x0];
-            [y0, y1] = [y1, y0];
-        }
-
         this.x0 = x0;
         this.x1 = x1;
         this.xmin = x0;
@@ -109,48 +102,31 @@ class Line {
         this.y1 = y1;
         this.ymin = Math.min(y0, y1);
         this.ymax = Math.max(y0, y1);
-        this.slope = (y1 - y0) / (x1 - x0);
 
         this.isLine = true;
         this.isCurve = false;
     }
 
-    static createLines(x0, y0, x1, y1) {
+    toString(containsCurves) {
 
-        // Creates an array of lines
-        // This is used instead of a constructor because vertical lines should be ignored
+        if (containsCurves) {
 
-        x0 = round(x0);
-        y0 = round(-1 * y0);
-        x1 = round(x1);
-        y1 = round(-1 * y1);
+            let str = 'L;';
+            str += formatNum(this.y1) + ';';
+            str += formatNum(this.y2) + ';';
+            str += ';';
 
-        if (x0 === x1) {
-            return [];
+            return str;
+
         }
 
-        return [new Line(x0, y0, x1, y1)];
-        
-    }
-
-    toString() {
-
-        let str = 'L';
-
-        let direction = Math.sign(this.direction);
-        if (direction === 1) {
-            str += '+';
-        } else {
-            str += '-';
-        }
-        str += ';';
-
-        str += formatNum(this.x0) + ';';
-        str += formatNum(this.x1) + ';';
-        str += formatNum(4 * this.y0) + ';';
-        str += formatNum(4 * this.slope) + ';';
+        let str = '';
+        str += formatNum(this.y1) + ';';
+        str += formatNum(this.y2) + ';';
+        str += ';;';
 
         return str;
+
     }
 
 }
@@ -159,7 +135,7 @@ class Curve {
 
     // Represents a quadratic Bézier curve
 
-    constructor(x0, y0, x1, y1, x2, y2, directionMult) {
+    constructor(x0, y0, x1, y1, x2, y2) {
 
         x0 = round(x0);
         y0 = round(y0);
@@ -167,13 +143,6 @@ class Curve {
         y1 = round(y1);
         x2 = round(x2);
         y2 = round(y2);
-
-        this.direction = directionMult;
-        if (x2 < x0) {
-            this.direction *= -1;
-            [x0, x2] = [x2, x0];
-            [y0, y2] = [y2, y0];
-        }
 
         this.x0 = x0;
         this.y0 = y0;
@@ -202,10 +171,6 @@ class Curve {
         this.xmin = x0;
         this.xmax = x2;
 
-        // Solve for t when dy/dt = 0  
-        const extremeT = (-1 * this.by) / (2 * this.ay);
-        const extremeY = this.yOfT(extremeT);
-
         this.ymin = Math.min(y0, y2, extremeY);
         this.ymax = Math.max(y0, y2, extremeY);
 
@@ -213,172 +178,14 @@ class Curve {
         this.isCurve = true;
     }
 
-    static createCurves(x0, y0, x1, y1, x2, y2, x3, y3) {
+    toString(containsCurves) {
 
-        // Creates an array of curves
-        // This is used instead of a constructor because cubic curves need to be split
-        // Quadratic curves may also be split if they cannot be expressed as a function of x
+        let str = '';
 
-        x0 = round(x0);
-        y0 = round(-1 * y0);
-        x1 = round(x1);
-        y1 = round(-1 * y1);
-        x2 = round(x2);
-        y2 = round(-1 * y2);
-
-        if (x3 == null && y3 == null) {
-
-            // The curve is quadratic
-
-            if (x0 === x1 && x1 === x2) {
-                return [];
-            }
-
-            let directionMult = 1;
-            if (x2 < x0) {
-                [x0, x2] = [x2, x0];
-                [y0, y2] = [y2, y0];
-                directionMult = -1;
-            }
-
-            if (x0 <= x1 && x1 <= x2) {
-                return [new Curve(x0, y0, x1, y1, x2, y2, directionMult)];
-            }
-
-            // The curve cannot be expressed as a function of x
-
-            const ax = x2 - 2 * x1 + x0;
-            const bx = 2 * (x1 - x0);
-
-            /*
-            const cx = x0;
-
-            const ay = y2 - 2 * y1 + y0;
-            const by = 2 * (y1 - y0);
-            const cy = y0;
-            */
-
-            // Solve for t when dx/dt = 0
-            const extremeT = (-1 * bx) / (2 * ax);
-            
-            const controlX0 = lerp(x0, x1, extremeT);
-            const controlY0 = lerp(y0, y1, extremeT);
-            const controlX1 = lerp(x1, x2, extremeT);
-            const controlY1 = lerp(y1, y2, extremeT);
-            const midX = lerp(controlX0, controlX1, extremeT);
-            const midY = lerp(controlY0, controlY1, extremeT);
-
-            return [new Curve(x0, y0, controlX0, controlY0, midX, midY, directionMult), new Curve(midX, midY, controlX1, controlY1, x2, y2, directionMult)];
-
-        }
-
-        // The curve is cubic
-
-        x3 = round(x3);
-        y3 = round(-1 * y3);
-
-        if (x0 === x1 && x1 === x2 & x2 === x3) {
-            return [];
-        }
-
-        // Splits the cubic curves into 4 smaller cubic curves then approximates each smaller curve as a quadratic curve
-        return Curve.splitCubic(x0, y0, x1, y1, x2, y2, x3, y3, 4);
-
-    }
-
-    static splitCubic(x0, y0, x1, y1, x2, y2, x3, y3, parts) {
-
-        if (parts < 2) {
-            return [Curve.approxCubic(x0, y0, x1, y1, x2, y2, x3, y3)];
-        }
-
-        const t = 1 / parts;
-
-        let midX = lerp(x1, x2, t);
-        let midY = lerp(y1, y2, t);
-
-        const controlX0 = lerp(x0, x1, t);
-        const controlX1 = lerp(controlX0, midX, t);
-        const controlX3 = lerp(x2, x3, t);
-        const controlX2 = lerp(midX, controlX3, t);
-
-        const controlY0 = lerp(y0, y1, t);
-        const controlY1 = lerp(controlY0, midY, t);
-        const controlY3 = lerp(y2, y3, t);
-        const controlY2 = lerp(midY, controlY3, t);
-
-        midX = lerp(controlX1, controlX2, t);
-        midY = lerp(controlY1, controlY2, t);
-
-        let curves = [Curve.approxCubic(x0, y0, controlX0, controlY0, controlX1, controlY1, midX, midY)];
-        curves = curves.concat(Curve.splitCubic(midX, midY, controlX2, controlY2, controlX3, controlY3, x3, y3, parts - 1));
-
-        return curves;
-    }
-
-    static approxCubic(x0, y0, x1, y1, x2, y2, x3, y3) {
-
-        // Approximates a cubic curve to a quadratic curve
-
-        const controlX = (0.75 * x1 - 0.25 * x0) + (0.75 * x2 - 0.25 * x3);
-        const controlY = (0.75 * y1 - 0.25 * y0) + (0.75 * y2 - 0.25 * y3);
-
-        return new Curve(x0, y0, controlX, controlY, x3, y3, 1);
-
-    }
-
-    yOfT(t) {
-        return this.ay * (t ** 2) + this.by * t + this.cy;
-    }
-
-    toString() {
-
-        let str = 'Q';
-
-        let direction = Math.sign(this.direction);
-        if (direction === 1) {
-            str += '+';
-        } else {
-            str += '-';
-        }
-        str += ';';
-
-        str += formatNum(this.x0) + ';';
-        str += formatNum(this.x1) + ';';
-
-        if (this.ax === 0) {
-
-            str += 'z;';
-            str += '0;';
-            str += formatNum(this.bx) + ';';
-            str += formatNum(this.cx) + ';';
-
-            str += formatNum(4 * this.ay) + ';';
-            str += formatNum(4 * this.by) + ';';
-            str += formatNum(4 * this.cy) + ';';
-
-        } else {
-
-            if (this.ax > 0) {
-                str += 'p;';
-            } else {
-                str += 'm;';
-            }
-            /*
-            str += formatNum(-1 * this.bx / this.ax) + ';';
-            str += formatNum(4 / this.ax) + ';';
-            str += formatNum(this.cx) + ';';
-            */
-
-            str += formatNum(-1 * this.bx) + ';';
-            str += formatNum(this.ax) + ';';
-            str += formatNum(this.cx) + ';';
-
-            str += formatNum(4 * this.ay / 4) + ';';
-            str += formatNum(4 * this.by / 2) + ';';
-            str += formatNum(4 * this.cy) + ';';
-
-        }
+        str += formatNum(this.ax) + ';';
+        str += formatNum(this.bx) + ';';
+        str += formatNum(this.ay) + ';';
+        str += formatNum(this.by) + ';';
 
         return str;
 
