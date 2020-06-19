@@ -357,7 +357,7 @@ class TextEngine {
                     let newX = path[j + 3];
                     let newY = path[j + 4];
 
-                    pathDef += new Curve(x + 0.135, y, controlX + 0.135, controlY, newX + 0.135, newY).toString(containsCurves);
+                    pathDef += new Curve(x, y, controlX, controlY, newX, newY).toString(containsCurves);
 
                     x = newX;
                     y = newY;
@@ -369,7 +369,7 @@ class TextEngine {
                     let newX = path[j];
                     let newY = path[j + 1];
 
-                    pathDef += new Line(x + 0.135, y, newX + 0.135, newY).toString(containsCurves);
+                    pathDef += new Line(x, y, newX, newY).toString(containsCurves);
 
                     x = newX;
                     y = newY;
