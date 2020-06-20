@@ -313,7 +313,7 @@ class TextEngine {
         }
 
         this.currentFont.push(index + 1);
-        this.currentFont.push(charData[0] + 0.27);
+        this.currentFont.push(charData[0]);
 
         let definition = '';
         const containsCurves = TextEngine.containsCurves(charData);
@@ -337,7 +337,7 @@ class TextEngine {
             let path = charData[i];
             let x = path[0];
             let y = path[1];
-            let firstCoord = formatNum(x + 0.135) + ';' + formatNum(y) + ';';
+            let firstCoord = formatNum(x) + ';' + formatNum(y) + ';';
 
             if (path.length === 2) {
                 dots++;
