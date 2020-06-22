@@ -1,2 +1,2 @@
 # PenTextEngineInjector
- Injects fonts into Pen Text Engine
+ Injects fonts into Pen Text Engine++
